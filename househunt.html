@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HouseHunt - Find Your Rental Home</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 0;
+      background: #f4f4f4;
+    }
+    header {
+      background: #6200ea;
+      color: white;
+      padding: 1em;
+      text-align: center;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 2em auto;
+      padding: 1em;
+    }
+    .filters, .property-listing, .inquiry-form, .dashboard, .admin-panel {
+      margin-bottom: 2em;
+      background: white;
+      padding: 1em;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .filters input, .filters select {
+      padding: 0.5em;
+      margin-right: 1em;
+    }
+    .property-card {
+      margin-bottom: 1em;
+    }
+    .property-card img {
+      width: 100%;
+      max-height: 200px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    .property-info {
+      margin-top: 0.5em;
+    }
+    .btn {
+      background: #6200ea;
+      color: white;
+      padding: 0.5em 1em;
+      border: none;
+      cursor: pointer;
+      margin-top: 0.5em;
+    }
+    .btn:hover {
+      background: #3700b3;
+    }
+    form input, form textarea {
+      width: 100%;
+      padding: 0.5em;
+      margin: 0.5em 0;
+    }
+    .tabs {
+      margin-bottom: 1em;
+    }
+    .tabs button {
+      margin-right: 1em;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🏠 HouseHunt</h1>
+    <p>Find Your Perfect Rental Home</p>
+  </header>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="btn" onclick="showTab('browse')">Browse</button>
+      <button class="btn" onclick="showTab('dashboard')">Dashboard</button>
+      <button class="btn" onclick="showTab('admin')">Admin</button>
+    </div>
+
+    <!-- Filters and Listings -->
+    <section class="filters tab-section" id="browse">
+      <h2>Search Filters</h2>
+      <input type="text" id="location" placeholder="Location" />
+      <select id="bedrooms">
+        <option value="">Bedrooms</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3+">3+</option>
+      </select>
+      <input type="number" id="maxRent" placeholder="Max Rent (₹)" />
+      <button class="btn" onclick="applyFilters()">Apply Filters</button>
+    </section>
+
+    <section class="property-listing tab-section" id="listingContainer"></section>
+
+    <!-- Inquiry Form -->
+    <section class="inquiry-form tab-section" id="inquiryForm" style="display:none;">
+      <h2>Send Inquiry</h2>
+      <form onsubmit="submitInquiry(event)">
+        <input type="text" id="inquiryName" placeholder="Your Name" required />
+        <input type="email" id="inquiryEmail" placeholder="Your Email" required />
+        <textarea id="inquiryMessage" placeholder="Your Message" required></textarea>
+        <button class="btn">Send Inquiry</button>
+      </form>
+    </section>
+
+    <!-- User Dashboard -->
+    <section class="dashboard tab-section" id="dashboard" style="display:none;">
+      <h2>User Dashboard</h2>
+      <div id="dashboardContent">No inquiries yet.</div>
+    </section>
+
+    <!-- Admin Panel -->
+    <section class="admin-panel tab-section" id="admin" style="display:none;">
+      <h2>Admin Panel</h2>
+      <div id="adminRequests">No pending bookings.</div>
+    </section>
+  </div>
+
+  <script>
+    const properties = [
+      {
+        id: 1,
+        title: "Modern 2BHK Apartment",
+        location: "Hyderabad",
+        bedrooms: "2",
+        rent: 3000,
+        details: "Furnished, AC, Balcony",
+        image: "https://cf.bstatic.com/xdata/images/hotel/max1024x768/390598332.jpg?k=3d42b76019d0b955d8ce147f25d840558467ef9582df209daddd04e03c4c54dd&o=&hp=1"
+      },
+      {
+        id: 2,
+        title: "Cozy 1 Bedroom Flat",
+        location: "Chennai",
+        bedrooms: "1",
+        rent: 3500,
+        details: "Close to Metro, Park View",
+        image: "https://colonialproperties.com/application/files/7316/9055/4308/COZY_RETREAT_EXPLORING_THE_ALLURE_OF_OUR_1_BEDROOM_GATLINBURG_CABIN_RENTALS.jpg"
+      },
+      {
+        id: 3,
+        title: "Spacious 3BHK House",
+        location: "Bengaluru",
+        bedrooms: "3",
+        rent: 2500,
+        details: "Garden, Garage, Pet-friendly",
+        image: "https://cf.bstatic.com/xdata/images/hotel/max1024x768/386047056.jpg?k=93c16742b9d4b04685f6c95172516aa3f23ffd90c1daf8a6aa07a5267bb7891a&o=&hp=1"
+      }
+    ];
+
+    let booking = null;
+    let bookingStatus = "none"; // 'none', 'pending', 'confirmed'
+
+    function renderListings(list = properties) {
+      const container = document.getElementById("listingContainer");
+      container.innerHTML = "";
+      list.forEach(prop => {
+        const card = document.createElement("div");
+        card.className = "property-card";
+        card.innerHTML = `
+          <img src="${prop.image}" alt="${prop.title}" />
+          <div class="property-info">
+            <h3>${prop.title}</h3>
+            <p>📍 ${prop.location}</p>
+            <p>🛏 ${prop.bedrooms} Bedrooms | 💵 ₹${prop.rent}/month</p>
+            <p>📝 Details: ${prop.details}</p>
+            <button class="btn" onclick="openInquiry(${prop.id})">Inquire</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function applyFilters() {
+      const loc = document.getElementById("location").value.toLowerCase();
+      const beds = document.getElementById("bedrooms").value;
+      const maxRent = parseInt(document.getElementById("maxRent").value);
+
+      const filtered = properties.filter(p =>
+        (!loc || p.location.toLowerCase().includes(loc)) &&
+        (!beds || p.bedrooms === beds) &&
+        (!maxRent || p.rent <= maxRent)
+      );
+      renderListings(filtered);
+    }
+
+    function openInquiry(id) {
+      booking = properties.find(p => p.id === id);
+      bookingStatus = "pending";
+      document.getElementById("inquiryForm").style.display = "block";
+      document.getElementById("inquiryForm").scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function submitInquiry(event) {
+      event.preventDefault();
+      alert("Inquiry sent! Awaiting admin approval.");
+      document.getElementById("inquiryForm").style.display = "none";
+      document.querySelector("form").reset();
+      updateDashboard();
+      updateAdmin();
+    }
+
+    function updateDashboard() {
+      const dash = document.getElementById("dashboardContent");
+      if (bookingStatus === "pending") {
+        dash.innerHTML = `
+          <p>⏳ Booking Requested for: <strong>${booking.title}</strong></p>
+          <p>Status: Pending Admin Confirmation</p>
+        `;
+      } else if (bookingStatus === "confirmed") {
+        dash.innerHTML = `
+          <p>✅ Booking Confirmed!</p>
+          <p><strong>${booking.title}</strong></p>
+          <p>Location: ${booking.location}</p>
+          <p>Bedrooms: ${booking.bedrooms}</p>
+          <p>Rent: ₹${booking.rent}/month</p>
+          <p>Details: ${booking.details}</p>
+        `;
+      } else {
+        dash.innerText = "No bookings yet.";
+      }
+    }
+
+    function updateAdmin() {
+      const admin = document.getElementById("adminRequests");
+      if (bookingStatus === "pending") {
+        admin.innerHTML = `
+          <p><strong>${booking.title}</strong> requested by Raga.</p>
+          <button class="btn" onclick="approveBooking()">Approve Booking</button>
+        `;
+      } else {
+        admin.innerHTML = "<p>No pending bookings.</p>";
+      }
+    }
+
+    function approveBooking() {
+      bookingStatus = "confirmed";
+      alert("Admin has approved the booking!");
+      updateDashboard();
+      updateAdmin();
+    }
+
+    function showTab(tab) {
+      document.querySelectorAll('.tab-section').forEach(sec => sec.style.display = 'none');
+      document.getElementById(tab).style.display = 'block';
+      if (tab === "dashboard") updateDashboard();
+      if (tab === "admin") updateAdmin();
+    }
+
+    // Initialize
+    renderListings();
+  </script>
+</body>
+</html>
